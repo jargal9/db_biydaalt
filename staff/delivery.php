@@ -22,7 +22,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['delivery_id'], $_POST
              WHERE d.delivery_ID=? AND o.staff_ID=?"
         )->execute([$newStatus, $delivDate, $deliveryID, $staffID]);
         logSecurityEvent($pdo, 'delivery_status_update', $_SESSION['username'] ?? null, true, "delivery_ID=$deliveryID status=$newStatus");
-        $msg = ['type'=>'success','text'=>'✓ Хүргэлтийн статус шинэчлэгдлээ.'];
+        $msg = ['type'=>'success','text'=>'✓ Хүргэлтийн төлөв шинэчлэгдлээ.'];
     }
 }
 
@@ -50,7 +50,7 @@ require_once '../includes/header.php';
 
 <div class="page-header">
   <h1>Хүргэлт</h1>
-  <p>Хүргэлтийн статусыг хянах, шинэчлэх</p>
+  <p>Хүргэлтийн төлөвийг хянах, шинэчлэх</p>
 </div>
 
 <?php if ($msg): ?>
@@ -60,7 +60,7 @@ require_once '../includes/header.php';
 <div class="card">
   <div class="card-title">Хүргэлтийн жагсаалт</div>
   <table>
-    <thead><tr><th>Хүргэлт #</th><th>Захиалга #</th><th>Харилцагч</th><th>Хаяг</th><th>Утас</th><th>Статус</th><th>Хүргэсэн огноо</th><th>Үйлдэл</th></tr></thead>
+    <thead><tr><th>Хүргэлт #</th><th>Захиалга #</th><th>Харилцагч</th><th>Хаяг</th><th>Утас</th><th>Төлөв</th><th>Хүргэсэн огноо</th><th>Үйлдэл</th></tr></thead>
     <tbody>
       <?php foreach ($deliveries as $d): ?>
       <tr>
@@ -73,7 +73,7 @@ require_once '../includes/header.php';
           <?php
           $sc = strtolower(str_replace(' ','',$d['status']));
           $cls = $sc === 'delivered' ? 'completed' : ($sc === 'cancelled' ? 'cancelled' : ($sc === 'inprogress' ? 'processing' : 'pending'));
-          echo "<span class='badge badge-$cls'>" . e($d['status']) . "</span>";
+          echo "<span class='badge badge-$cls'>" . e(statusLabel($d['status'])) . "</span>";
           ?>
         </td>
         <td style="font-size:12px;color:var(--warm-gray)"><?= $d['delivery_date'] ?? '—' ?></td>
@@ -83,7 +83,7 @@ require_once '../includes/header.php';
             <input type="hidden" name="delivery_id" value="<?= $d['delivery_ID'] ?>">
             <select name="status" style="padding:5px 7px;border-radius:6px;border:1px solid var(--border);font-size:12px">
               <?php foreach(['Pending','In Progress','Delivered','Cancelled'] as $s): ?>
-              <option <?= $d['status']===$s?'selected':'' ?>><?= $s ?></option>
+              <option value="<?= e($s) ?>" <?= $d['status']===$s?'selected':'' ?>><?= e(statusLabel($s)) ?></option>
               <?php endforeach; ?>
             </select>
             <button type="submit" class="btn btn-sm btn-accent">→</button>

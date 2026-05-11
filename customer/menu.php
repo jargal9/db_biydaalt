@@ -109,6 +109,7 @@ require_once '../includes/header.php';
   <div style="position:sticky;top:24px">
     <div class="card">
       <div class="card-title">🛒 Сагс</div>
+      <div id="quantityWarning" class="alert alert-error" style="display:none;margin-bottom:12px">Хоолны тоо ширхэг 50-с дээш байх боломжгүй.</div>
       <div id="cartContainer">
         <p id="emptyMsg" style="color:var(--warm-gray);font-size:14px;padding:12px 0">Хоол сонгоогүй байна...</p>
       </div>
@@ -130,8 +131,14 @@ require_once '../includes/header.php';
 <script>
 let cart = {};
 
+function showQuantityWarning() {
+  const warning = document.getElementById('quantityWarning');
+  warning.style.display = 'block';
+}
+
 function addToCart(id, name, price) {
   if (cart[id]) {
+    if (cart[id].qty >= 50) showQuantityWarning();
     cart[id].qty = Math.min(cart[id].qty + 1, 50);
   } else {
     cart[id] = { name, price, qty: 1 };
@@ -143,7 +150,10 @@ function changeQty(id, delta) {
   if (!cart[id]) return;
   cart[id].qty += delta;
   if (cart[id].qty <= 0) delete cart[id];
-  else if (cart[id].qty > 50) cart[id].qty = 50;
+  else if (cart[id].qty > 50) {
+    showQuantityWarning();
+    cart[id].qty = 50;
+  }
   renderCart();
 }
 

@@ -79,7 +79,7 @@ require_once '../includes/header.php';
         <td>
           <?php
           $sc = strtolower($o['status']);
-          echo "<span class='badge badge-$sc'>{$o['status']}</span>";
+          echo "<span class='badge badge-$sc'>" . e(statusLabel($o['status'])) . "</span>";
           ?>
         </td>
         <td><strong><?= $o['amount'] !== null ? number_format($o['amount']) . '₮' : '—' ?></strong></td>

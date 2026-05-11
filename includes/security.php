@@ -12,6 +12,21 @@ function e($value) {
     return htmlspecialchars((string)$value, ENT_QUOTES, 'UTF-8');
 }
 
+function statusLabel($status) {
+    $labels = [
+        'Pending' => 'Хүлээгдэж байна',
+        'Processing' => 'Хүлээгдэж байна',
+        'Completed' => 'Дууссан',
+        'Cancelled' => 'Цуцлагдсан',
+        'In Progress' => 'Хүлээгдэж байна',
+        'Delivered' => 'Хүргэгдсэн',
+        'Available' => 'Боломжтой',
+        'Unavailable' => 'Боломжгүй',
+    ];
+
+    return $labels[$status] ?? (string)$status;
+}
+
 function cleanText($value, $maxLength = 100, $allowEmpty = false) {
     $value = trim((string)$value);
     if ($value === '') {

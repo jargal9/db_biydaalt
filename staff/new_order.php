@@ -25,7 +25,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (!validatePostedFields($pdo, $_POST, $_SESSION['username'] ?? null)) {
         $msg = ['type'=>'error','text'=>'Оруулсан мэдээлэл зөвшөөрөгдөхгүй тэмдэгт агуулсан байна.'];
     } elseif (empty($validItems)) {
-        $msg = ['type'=>'error','text'=>'Дор хаяж нэг хоол сонгож, тоо ширхэгийг 1-50 хооронд оруулна уу.'];
+        $msg = ['type'=>'error','text'=>'Хоолны тоо ширхэг 50-с дээш байх боломжгүй.'];
     } else {
     try {
     $pdo->beginTransaction();
@@ -153,6 +153,7 @@ require_once '../includes/header.php';
         <span>Хоол сонгох</span>
         <button type="button" onclick="addRow()" class="btn btn-ghost btn-sm">+ Мөр нэмэх</button>
       </div>
+      <div id="quantityWarning" class="alert alert-error" style="display:none;margin-bottom:12px">Хоолны тоо ширхэг 50-с дээш байх боломжгүй.</div>
       <div id="itemsContainer">
         <div class="item-row" style="display:grid;grid-template-columns:1fr 100px 36px;gap:10px;margin-bottom:10px;align-items:center">
           <select name="items[]" style="padding:10px 12px;border:1.5px solid var(--border);border-radius:9px;font-family:'DM Sans',sans-serif;font-size:14px" onchange="calcTotal()">
@@ -225,15 +226,22 @@ function removeRow(btn) {
   if (rows.length > 1) { btn.closest('.item-row').remove(); calcTotal(); }
 }
 
+function showQuantityWarning() {
+  const warning = document.getElementById('quantityWarning');
+  warning.style.display = 'block';
+}
+
 function calcTotal() {
   const rows = document.querySelectorAll('.item-row');
   let total = 0;
   let summaryHTML = '';
+  let hasQuantityWarning = false;
   rows.forEach(row => {
     const sel = row.querySelector('select');
     const qtyInput = row.querySelector('input');
     let qty = parseInt(qtyInput.value) || 0;
     if (qty > 50) {
+      hasQuantityWarning = true;
       qty = 50;
       qtyInput.value = 50;
     }
@@ -247,6 +255,7 @@ function calcTotal() {
       </div>`;
     }
   });
+  document.getElementById('quantityWarning').style.display = hasQuantityWarning ? 'block' : 'none';
   document.getElementById('summary').innerHTML = summaryHTML || '<p style="color:var(--warm-gray);font-size:14px">Хоол сонгоно уу...</p>';
   document.getElementById('totalDisplay').textContent = total.toLocaleString() + '₮';
 }

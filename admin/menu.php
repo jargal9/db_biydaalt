@@ -114,9 +114,9 @@ require_once '../includes/header.php';
         <td id="price_<?= $f['food_ID'] ?>"><strong><?= number_format($f['price']) ?>₮</strong></td>
         <td>
           <?php if ($f['status'] === 'Available'): ?>
-            <span class="badge badge-completed">✓ Available</span>
+            <span class="badge badge-completed">✓ <?= e(statusLabel('Available')) ?></span>
           <?php else: ?>
-            <span class="badge badge-cancelled">✗ Unavailable</span>
+            <span class="badge badge-cancelled">✗ <?= e(statusLabel('Unavailable')) ?></span>
           <?php endif; ?>
         </td>
         <td style="display:flex;gap:6px;flex-wrap:wrap">

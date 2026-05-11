@@ -77,12 +77,12 @@ require_once '../includes/header.php';
           <td style="font-size:13px;color:var(--warm-gray)"><?= htmlspecialchars($o['items'] ?? '-') ?></td>
           <td><?= $o['amount'] !== null ? number_format($o['amount']) . '₮' : '—' ?></td>
           <td style="font-size:12px;color:var(--warm-gray)"><?= $o['order_date'] ?></td>
-          <td><span class="badge badge-<?= strtolower($o['status']) ?>"><?= $o['status'] ?></span></td>
+          <td><span class="badge badge-<?= strtolower($o['status']) ?>"><?= e(statusLabel($o['status'])) ?></span></td>
           <td>
             <?php
             $ds = strtolower(str_replace(' ','',$o['delivery_status'] ?? ''));
             $cls = $ds === 'delivered' ? 'delivered' : ($ds === 'cancelled' ? 'cancelled' : 'pending');
-            echo "<span class='badge badge-$cls'>" . ($o['delivery_status'] ?? '—') . "</span>";
+            echo "<span class='badge badge-$cls'>" . e(statusLabel($o['delivery_status'] ?? '—')) . "</span>";
             ?>
           </td>
         </tr>

@@ -286,9 +286,9 @@ $accentColor = $roleColors[$_SESSION['role']] ?? '#c8922a';
     letter-spacing: 0.04em;
   }
   .badge-completed { background: #e8f5e3; color: #2d6a1f; }
-  .badge-pending   { background: #fff3cd; color: #856404; }
+  .badge-pending,
+  .badge-processing{ background: #fff3cd; color: #856404; }
   .badge-cancelled { background: #fde8e4; color: #9b2b1a; }
-  .badge-processing{ background: #e0f0ff; color: #1a5fa3; }
   .badge-delivered { background: #e8f5e3; color: #2d6a1f; }
   .badge-admin     { background: rgba(200,146,42,0.15); color: #7a5010; }
   .badge-staff     { background: rgba(74,103,65,0.15); color: #2d5022; }

@@ -32,10 +32,10 @@ $recentOrders = $pdo->prepare("
 $recentOrders->execute([$staffID]);
 $recentOrders = $recentOrders->fetchAll();
 
-$pageTitle = 'Staff Dashboard';
+$pageTitle = 'Нүүр хуудас';
 $navLinks = '
 <span class="nav-label">Үндсэн</span>
-<a href="dashboard.php" class="nav-link active"><span class="icon"></span> Dashboard</a>
+<a href="dashboard.php" class="nav-link active"><span class="icon"></span> Нүүр хуудас</a>
 <a href="orders.php" class="nav-link"><span class="icon"></span> Захиалгууд</a>
 <a href="delivery.php" class="nav-link"><span class="icon"></span> Хүргэлт</a>
 <a href="new_order.php" class="nav-link"><span class="icon"></span> Захиалга авах</a>
@@ -79,7 +79,7 @@ require_once '../includes/header.php';
         <td><?= htmlspecialchars($o['customer']) ?></td>
         <td style="font-size:12px;color:var(--warm-gray)"><?= $o['order_date'] ?></td>
         <td><?= $o['amount'] ? number_format($o['amount']) . '₮' : '—' ?></td>
-        <td><span class="badge badge-<?= strtolower($o['status']) ?>"><?= $o['status'] ?></span></td>
+        <td><span class="badge badge-<?= strtolower($o['status']) ?>"><?= e(statusLabel($o['status'])) ?></span></td>
       </tr>
       <?php endforeach; ?>
     </tbody>

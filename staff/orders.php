@@ -71,14 +71,14 @@ require_once '../includes/header.php';
         <td style="font-size:12px;color:var(--warm-gray);max-width:160px"><?= htmlspecialchars($o['items'] ?? '-') ?></td>
         <td><?= $o['amount'] ? number_format($o['amount']) . '₮' : '—' ?></td>
         <td style="font-size:12px;color:var(--warm-gray)"><?= $o['order_date'] ?></td>
-        <td><span class="badge badge-<?= strtolower($o['status']) ?>"><?= $o['status'] ?></span></td>
+        <td><span class="badge badge-<?= strtolower($o['status']) ?>"><?= e(statusLabel($o['status'])) ?></span></td>
         <td>
           <?php if (!in_array($o['status'], ['Completed','Cancelled'])): ?>
           <form method="POST" style="display:flex;gap:4px">
             <input type="hidden" name="order_id" value="<?= $o['order_ID'] ?>">
             <select name="status" style="padding:5px 7px;border-radius:6px;border:1px solid var(--border);font-size:12px">
               <?php foreach(['Pending','Processing','Completed','Cancelled'] as $s): ?>
-              <option <?= $o['status']===$s?'selected':'' ?>><?= $s ?></option>
+              <option value="<?= e($s) ?>" <?= $o['status']===$s?'selected':'' ?>><?= e(statusLabel($s)) ?></option>
               <?php endforeach; ?>
             </select>
             <button type="submit" class="btn btn-sm btn-accent">→</button>
