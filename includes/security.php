@@ -43,6 +43,38 @@ function cleanEnum($value, array $allowed) {
     return in_array($value, $allowed, true) ? $value : null;
 }
 
+function cleanPhone($value, $allowEmpty = true) {
+    $value = trim((string)$value);
+    if ($value === '') {
+        return $allowEmpty ? '' : null;
+    }
+
+    if (hasSqlInjectionPattern($value)) {
+        return null;
+    }
+
+    $compact = preg_replace('/[\s-]+/', '', $value);
+    if (preg_match('/^\+976[0-9]{8}$/', $compact)) {
+        return $compact;
+    }
+    if (preg_match('/^976[0-9]{8}$/', $compact)) {
+        return '+' . $compact;
+    }
+    if (preg_match('/^[0-9]{8}$/', $compact)) {
+        return $compact;
+    }
+
+    return null;
+}
+
+function validPasswordLength($password, $allowEmpty = true) {
+    $password = (string)$password;
+    if ($password === '') {
+        return $allowEmpty;
+    }
+    return strlen($password) >= 6 && strlen($password) <= 255;
+}
+
 function hasSqlInjectionPattern($value) {
     $value = (string)$value;
     if (strlen($value) > 255) {

@@ -112,7 +112,7 @@ require_once '../includes/header.php';
           <?php else: ?>
             <div style="display:flex;gap:8px;flex-wrap:wrap">
               <a href="payment.php?order_id=<?= $o['order_ID'] ?>" class="btn btn-sm btn-accent">Төлөх</a>
-              <form method="POST" onsubmit="return confirm('Захиалгыг цуцлах уу?');" style="display:inline">
+              <form method="POST" class="cancel-order-form" data-order-id="<?= e($o['order_ID']) ?>" style="display:inline">
                 <input type="hidden" name="cancel_order_id" value="<?= $o['order_ID'] ?>">
                 <button type="submit" class="btn btn-sm btn-danger">Цуцлах</button>
               </form>
@@ -125,5 +125,96 @@ require_once '../includes/header.php';
   </table>
   <?php endif; ?>
 </div>
+
+<style>
+  .app-modal-backdrop {
+    position: fixed;
+    inset: 0;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    background: rgba(26, 17, 8, 0.46);
+    z-index: 1000;
+  }
+
+  .app-modal-backdrop.is-open {
+    display: flex;
+  }
+
+  .app-modal {
+    width: min(420px, 94vw);
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    box-shadow: 0 24px 70px rgba(0,0,0,0.22);
+    padding: 24px;
+  }
+
+  .app-modal h2 {
+    font-family: 'Playfair Display', serif;
+    font-size: 22px;
+    margin-bottom: 8px;
+    color: var(--ink);
+  }
+
+  .app-modal p {
+    color: var(--warm-gray);
+    font-size: 14px;
+    line-height: 1.5;
+    margin-bottom: 22px;
+  }
+
+  .app-modal-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+  }
+</style>
+
+<div class="app-modal-backdrop" id="cancelOrderModal" aria-hidden="true">
+  <div class="app-modal" role="dialog" aria-modal="true" aria-labelledby="cancelOrderTitle">
+    <h2 id="cancelOrderTitle">Захиалга цуцлах</h2>
+    <p id="cancelOrderMessage">Та энэ захиалгыг цуцлахдаа итгэлтэй байна уу?</p>
+    <div class="app-modal-actions">
+      <button type="button" class="btn btn-ghost" id="cancelOrderNo">Болих</button>
+      <button type="button" class="btn btn-danger" id="cancelOrderYes">Цуцлах</button>
+    </div>
+  </div>
+</div>
+
+<script>
+let pendingCancelForm = null;
+const cancelModal = document.getElementById('cancelOrderModal');
+const cancelMessage = document.getElementById('cancelOrderMessage');
+
+document.querySelectorAll('.cancel-order-form').forEach(form => {
+  form.addEventListener('submit', event => {
+    event.preventDefault();
+    pendingCancelForm = form;
+    cancelMessage.textContent = `#${form.dataset.orderId} захиалгыг цуцлахдаа итгэлтэй байна уу?`;
+    cancelModal.classList.add('is-open');
+    cancelModal.setAttribute('aria-hidden', 'false');
+  });
+});
+
+document.getElementById('cancelOrderNo').addEventListener('click', () => {
+  pendingCancelForm = null;
+  cancelModal.classList.remove('is-open');
+  cancelModal.setAttribute('aria-hidden', 'true');
+});
+
+document.getElementById('cancelOrderYes').addEventListener('click', () => {
+  if (pendingCancelForm) {
+    pendingCancelForm.submit();
+  }
+});
+
+cancelModal.addEventListener('click', event => {
+  if (event.target === cancelModal) {
+    document.getElementById('cancelOrderNo').click();
+  }
+});
+</script>
 
 <?php require_once '../includes/footer.php'; ?>

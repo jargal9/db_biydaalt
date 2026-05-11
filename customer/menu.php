@@ -132,7 +132,7 @@ let cart = {};
 
 function addToCart(id, name, price) {
   if (cart[id]) {
-    cart[id].qty++;
+    cart[id].qty = Math.min(cart[id].qty + 1, 50);
   } else {
     cart[id] = { name, price, qty: 1 };
   }
@@ -143,6 +143,7 @@ function changeQty(id, delta) {
   if (!cart[id]) return;
   cart[id].qty += delta;
   if (cart[id].qty <= 0) delete cart[id];
+  else if (cart[id].qty > 50) cart[id].qty = 50;
   renderCart();
 }
 

@@ -30,7 +30,7 @@ $recentOrders = $pdo->prepare("
 $recentOrders->execute([$userID]);
 $recentOrders = $recentOrders->fetchAll();
 
-$pageTitle = 'Миний хуудас';
+$pageTitle = 'Нүүр хуудас';
 $navLinks = '
 <span class="nav-label">Үндсэн</span>
 <a href="dashboard.php" class="nav-link active"><span class="icon"></span> Нүүр хуудас</a>

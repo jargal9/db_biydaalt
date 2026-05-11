@@ -140,10 +140,10 @@ require_once '../includes/header.php';
           <label>Төлбөрийн арга</label>
           <select name="pay_method" required style="width:100%;padding:11px 14px;border:1.5px solid var(--border);border-radius:9px;font-family:'DM Sans',sans-serif;font-size:14px;color:var(--ink);background:#fff;cursor:pointer;outline:none;transition:border-color 0.15s">
             <option value="" disabled selected>Сонгоно уу...</option>
-            <option value="Cash">💵 Бэлэн мөнгө</option>
-            <option value="Card">Картаар</option>
-            <option value="Mobile">📱 Мобайл төлбөр</option>
-            <option value="Bank">🏦 Онлайн данс</option>
+            <option value="Cash">Дансаар</option>
+            <option value="Card">Банкны картаар</option>
+            <option value="Mobile">SocialPay</option>
+            <option value="Bank">MonPay</option>
           </select>
         </div>
 
@@ -153,7 +153,7 @@ require_once '../includes/header.php';
           <textarea 
             name="delivery_addr" 
             rows="4" 
-            placeholder="Уул, өрөө, дүүргийн нэр..."
+            placeholder=""
             required
             style="width:100%;padding:11px 14px;border:1.5px solid var(--border);border-radius:9px;font-family:'DM Sans',sans-serif;font-size:14px;color:var(--ink);background:#fff;outline:none;resize:none;transition:border-color 0.15s"
           ><?= htmlspecialchars($order['address'] ?? '') ?></textarea>
@@ -169,12 +169,12 @@ require_once '../includes/header.php';
 
         <!-- Submit Button -->
         <button type="submit" class="btn btn-accent" style="width:100%;justify-content:center;padding:13px;font-size:15px;font-weight:600">
-          ✓ Төлбөр төлөх
+          Төлбөр төлөх
         </button>
 
         <!-- Back Link -->
         <div style="text-align:center;margin-top:12px">
-          <a href="my_orders.php" style="color:var(--warm-gray);font-size:13px;text-decoration:none">← Буцаах</a>
+          <a href="my_orders.php" style="color:var(--warm-gray);font-size:13px;text-decoration:none">← Буцах</a>
         </div>
       </form>
     </div>

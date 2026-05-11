@@ -12,10 +12,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $customerContact = cleanText($_POST['customer_contact'] ?? '', 50, true);
     $items = $_POST['items'] ?? [];
     $quantities = $_POST['quantities'] ?? [];
+    $validItems = [];
+
+    foreach ($items as $i => $foodID) {
+        $foodID = cleanInt($foodID ?? null);
+        $qty = cleanInt($quantities[$i] ?? null, 1, 50);
+        if ($foodID && $qty) {
+            $validItems[] = ['food' => $foodID, 'qty' => $qty];
+        }
+    }
 
     if (!validatePostedFields($pdo, $_POST, $_SESSION['username'] ?? null)) {
         $msg = ['type'=>'error','text'=>'Оруулсан мэдээлэл зөвшөөрөгдөхгүй тэмдэгт агуулсан байна.'];
+    } elseif (empty($validItems)) {
+        $msg = ['type'=>'error','text'=>'Дор хаяж нэг хоол сонгож, тоо ширхэгийг 1-50 хооронд оруулна уу.'];
     } else {
+    try {
+    $pdo->beginTransaction();
+
     // If no existing customer selected, create new one
     if (!$customerID && $customerName) {
         $maxID = $pdo->query("SELECT MAX(user_ID) FROM Users")->fetchColumn();
@@ -24,7 +38,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             ->execute([$customerID, $customerName, $customerContact, '', 'temp_' . time(), hashUserPassword(bin2hex(random_bytes(8))), 'Customer']);
     }
 
-    if (!empty($items) && $customerID) {
+    if ($customerID) {
         // Create order
         $maxOrder = $pdo->query("SELECT MAX(order_ID) FROM Orders")->fetchColumn();
         $orderID = ($maxOrder ?? 500) + 1;
@@ -34,16 +48,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         $total = 0;
         $detailID = 1;
-        foreach ($items as $i => $foodID) {
-            $foodID = cleanInt($foodID ?? null);
-            $qty = cleanInt($quantities[$i] ?? null, 1, 50);
-            if (!$foodID || !$qty) continue;
-            $priceRow = $pdo->prepare("SELECT price FROM Food_Info WHERE food_ID=?");
+        foreach ($validItems as $item) {
+            $priceRow = $pdo->prepare("SELECT price FROM Food_Info WHERE food_ID=? AND status='Available' AND price > 0");
+            $foodID = $item['food'];
+            $qty = $item['qty'];
             $priceRow->execute([$foodID]);
             $price = $priceRow->fetchColumn();
+            if ($price === false) continue;
             $pdo->prepare("INSERT INTO Order_Details VALUES (?,?,?,?,?)")
                 ->execute([$detailID++, $orderID, $foodID, $qty, $price]);
             $total += $price * $qty;
+        }
+
+        if ($detailID === 1 || $total <= 0) {
+            throw new RuntimeException('No valid order items.');
         }
 
         // Payment
@@ -57,9 +75,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             ->execute([($maxDel ?? 700)+1, $orderID, 'Pending']);
 
         logSecurityEvent($pdo, 'staff_order_create', $_SESSION['username'] ?? null, true, 'order_ID=' . $orderID);
+        $pdo->commit();
         $msg = ['type'=>'success','text'=>"✓ Захиалга #$orderID амжилттай үүслээ! Нийт дүн: " . number_format($total) . "₮"];
     } else {
         $msg = ['type'=>'error','text'=>'Харилцагч сонгох эсвэл шинэ харилцагч нэмэх, мөн дор хаяж нэг хоол сонгоно уу.'];
+        $pdo->rollBack();
+    }
+    } catch (Throwable $e) {
+        if ($pdo->inTransaction()) {
+            $pdo->rollBack();
+        }
+        error_log('Staff order create failed: ' . $e->getMessage());
+        $msg = ['type'=>'error','text'=>'Захиалга үүсгэхэд алдаа гарлаа. Хоолны тоо ширхэгийг 1-50 хооронд оруулна уу.'];
     }
     }
 }
@@ -134,7 +161,7 @@ require_once '../includes/header.php';
             <option value="<?= $f['food_ID'] ?>" data-price="<?= $f['price'] ?>"><?= htmlspecialchars($f['name']) ?> (<?= number_format($f['price']) ?>₮)</option>
             <?php endforeach; ?>
           </select>
-          <input type="number" name="quantities[]" value="1" min="1" style="padding:10px 12px;border:1.5px solid var(--border);border-radius:9px;font-family:'DM Sans',sans-serif;font-size:14px;text-align:center" onchange="calcTotal()">
+          <input type="number" name="quantities[]" value="1" min="1" max="50" style="padding:10px 12px;border:1.5px solid var(--border);border-radius:9px;font-family:'DM Sans',sans-serif;font-size:14px;text-align:center" onchange="calcTotal()">
           <button type="button" onclick="removeRow(this)" style="padding:8px;background:#fde8e4;border:none;border-radius:8px;cursor:pointer;font-size:16px;color:#9b2b1a">✕</button>
         </div>
       </div>
@@ -204,7 +231,12 @@ function calcTotal() {
   let summaryHTML = '';
   rows.forEach(row => {
     const sel = row.querySelector('select');
-    const qty = parseInt(row.querySelector('input').value) || 0;
+    const qtyInput = row.querySelector('input');
+    let qty = parseInt(qtyInput.value) || 0;
+    if (qty > 50) {
+      qty = 50;
+      qtyInput.value = 50;
+    }
     if (sel.value && foodPrices[sel.value]) {
       const food = foodPrices[sel.value];
       const sub = food.price * qty;

@@ -12,9 +12,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $msg = ['type'=>'error','text'=>'Оруулсан мэдээлэл зөвшөөрөгдөхгүй тэмдэгт агуулсан байна.'];
     } elseif ($action === 'add_food') {
         $name = cleanText($_POST['name'] ?? '', 100);
-        $price = cleanInt($_POST['price'] ?? null, 0, 100000000);
+        $price = cleanInt($_POST['price'] ?? null, 1, 100000000);
         if (!$name || $price === null) {
-            $msg = ['type'=>'error','text'=>'Хоолны нэр болон үнийг зөв оруулна уу.'];
+            $msg = ['type'=>'error','text'=>'Хоолны нэр болон үнийг зөв оруулна уу. Үнэ 1₮-өөс бага байж болохгүй.'];
         } else {
         $maxID = $pdo->query("SELECT MAX(food_ID) FROM Food_Info")->fetchColumn();
         $newID = ($maxID ?? 100) + 1;
@@ -42,9 +42,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     if ($action === 'update_price') {
         $foodID = cleanInt($_POST['food_id'] ?? null);
-        $price = cleanInt($_POST['price'] ?? null, 0, 100000000);
+        $price = cleanInt($_POST['price'] ?? null, 1, 100000000);
         if (!$foodID || $price === null) {
-            $msg = ['type'=>'error','text'=>'Үнэ эсвэл хоолны ID буруу байна.'];
+            $msg = ['type'=>'error','text'=>'Үнэ эсвэл хоолны ID буруу байна. Үнэ 1₮-өөс бага байж болохгүй.'];
         } else {
         $pdo->prepare("UPDATE Food_Info SET price=? WHERE food_ID=?")->execute([$price, $foodID]);
         logSecurityEvent($pdo, 'food_price_update', $_SESSION['username'] ?? null, true, "food_ID=$foodID");
@@ -140,7 +140,7 @@ require_once '../includes/header.php';
     <form method="POST">
       <input type="hidden" name="action" value="add_food">
       <div class="form-group"><label>Хоолны нэр</label><input name="name" required></div>
-      <div class="form-group"><label>Үнэ (₮)</label><input name="price" type="number" min="0" required></div>
+      <div class="form-group"><label>Үнэ (₮)</label><input name="price" type="number" min="1" required></div>
       <div style="display:flex;gap:10px;margin-top:8px">
         <button type="submit" class="btn btn-primary">Нэмэх</button>
         <button type="button" onclick="document.getElementById('addFoodModal').style.display='none'" class="btn btn-ghost">Болих</button>
@@ -156,7 +156,7 @@ require_once '../includes/header.php';
     <form method="POST">
       <input type="hidden" name="action" value="update_price">
       <input type="hidden" name="food_id" id="pm_food_id">
-      <div class="form-group"><label>Шинэ үнэ (₮)</label><input name="price" id="pm_price" type="number" min="0" required></div>
+      <div class="form-group"><label>Шинэ үнэ (₮)</label><input name="price" id="pm_price" type="number" min="1" required></div>
       <div style="display:flex;gap:10px;margin-top:8px">
         <button type="submit" class="btn btn-primary">Хадгалах</button>
         <button type="button" onclick="document.getElementById('priceModal').style.display='none'" class="btn btn-ghost">Болих</button>
