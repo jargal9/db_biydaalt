@@ -45,7 +45,6 @@ require_once '../includes/header.php';
 
 <div class="page-header">
   <h1>Сайн байна уу, <?= htmlspecialchars(explode(' ', $_SESSION['name'])[0]) ?>!</h1>
-  <p>Таны ажлын мэдээлэл</p>
 </div>
 
 <div class="stats-grid">

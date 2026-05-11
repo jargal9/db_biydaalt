@@ -41,7 +41,6 @@ require_once '../includes/header.php';
 
 <div class="page-header">
   <h1>Миний захиалгууд</h1>
-  <p>Та боловсруулж буй захиалгуудыг хянах</p>
 </div>
 
 <?php if ($msg): ?>

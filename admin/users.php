@@ -53,7 +53,6 @@ require_once '../includes/header.php';
 
 <div class="page-header">
   <h1>Хэрэглэгчид</h1>
-  <p>Бүх хэрэглэгчдийг удирдах</p>
 </div>
 
 <?php if ($msg): ?>
@@ -76,7 +75,7 @@ require_once '../includes/header.php';
         <td><?= $u['contact'] ?></td>
         <td><span class="badge badge-<?= strtolower($u['role']) ?>"><?= $u['role'] ?></span></td>
         <td style="display:flex;gap:6px">
-          <button onclick="editUser(<?= htmlspecialchars(json_encode($u)) ?>)" class="btn btn-sm btn-ghost">✏ Засах</button>
+          <button onclick="editUser(<?= htmlspecialchars(json_encode($u)) ?>)" class="btn btn-sm btn-ghost">Засах</button>
           <form method="POST" onsubmit="return confirm('Устгах уу?')" style="display:inline">
             <input type="hidden" name="action" value="delete">
             <input type="hidden" name="del_id" value="<?= $u['user_ID'] ?>">

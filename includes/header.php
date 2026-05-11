@@ -40,43 +40,46 @@ $accentColor = $roleColors[$_SESSION['role']] ?? '#c8922a';
   /* ===== SIDEBAR ===== */
   .sidebar {
     width: var(--sidebar-w);
-    background: var(--ink);
+    background: linear-gradient(180deg, #1b140d 0%, #100a05 100%);
     min-height: 100vh;
     position: fixed;
     top: 0; left: 0;
     display: flex;
     flex-direction: column;
-    padding: 28px 0;
+    padding: 32px 0;
     z-index: 100;
+    box-shadow: 4px 0 40px rgba(0,0,0,0.25);
+    border-right: 1px solid rgba(255,255,255,0.08);
   }
 
   .sidebar-logo {
-    padding: 0 24px 28px;
+    padding: 0 24px 30px;
     border-bottom: 1px solid rgba(255,255,255,0.08);
-    margin-bottom: 20px;
+    margin-bottom: 26px;
   }
 
   .sidebar-logo .mark {
-    width: 40px;
-    height: 40px;
+    width: 46px;
+    height: 46px;
     position: relative;
-    background: var(--accent);
-    border-radius: 14px;
+    background: linear-gradient(135deg, #e1b25d 0%, #c8932a 100%);
+    border-radius: 16px;
     display: flex;
     align-items: center;
     justify-content: center;
-    margin-bottom: 12px;
+    margin-bottom: 14px;
+    box-shadow: inset 0 0 0 1px rgba(255,255,255,0.15), 0 14px 24px rgba(0,0,0,0.22);
   }
 
   .sidebar-logo .mark::before {
     content: '';
     position: absolute;
-    left: 8px;
-    bottom: 10px;
-    width: 24px;
-    height: 12px;
-    background: #fff;
-    border-radius: 0 0 14px 14px;
+    left: 10px;
+    bottom: 9px;
+    width: 26px;
+    height: 14px;
+    background: rgba(255,255,255,0.95);
+    border-radius: 0 0 16px 16px;
   }
 
   .sidebar-logo .mark::after {
@@ -88,29 +91,31 @@ $accentColor = $roleColors[$_SESSION['role']] ?? '#c8922a';
     height: 16px;
     background: rgba(255,255,255,0.9);
     border-radius: 2px;
-    box-shadow: 8px 0 0 rgba(255,255,255,0.75);
+    box-shadow: 8px 0 0 rgba(255,255,255,0.7), 16px 0 0 rgba(255,255,255,0.45);
   }
 
   .sidebar-logo h2 {
     font-family: 'Playfair Display', serif;
-    font-size: 16px;
+    font-size: 18px;
     color: var(--cream);
     line-height: 1.2;
+    letter-spacing: 0.01em;
+    margin-bottom: 8px;
   }
 
   .sidebar-logo .role-tag {
     display: inline-block;
     margin-top: 6px;
-    padding: 2px 8px;
+    padding: 4px 10px;
     background: rgba(255,255,255,0.08);
-    border-radius: 20px;
+    border-radius: 999px;
     font-size: 11px;
     color: var(--accent);
-    letter-spacing: 0.06em;
+    letter-spacing: 0.08em;
   }
 
   .nav-section {
-    padding: 0 12px;
+    padding: 0 18px;
     flex: 1;
   }
 
@@ -120,30 +125,32 @@ $accentColor = $roleColors[$_SESSION['role']] ?? '#c8922a';
     text-transform: uppercase;
     color: rgba(255,255,255,0.25);
     padding: 0 12px;
-    margin: 20px 0 8px;
+    margin: 24px 0 10px;
   }
 
   .nav-link {
     display: flex;
     align-items: center;
-    gap: 10px;
-    padding: 10px 12px;
-    border-radius: 8px;
+    gap: 12px;
+    padding: 12px 16px;
+    border-radius: 12px;
     text-decoration: none;
-    color: rgba(255,255,255,0.55);
+    color: rgba(255,255,255,0.75);
     font-size: 14px;
-    transition: all 0.15s;
-    margin-bottom: 2px;
+    transition: all 0.2s ease;
+    margin-bottom: 8px;
+    background: rgba(255,255,255,0.03);
   }
 
-  .nav-link:hover, .nav-link.active {
-    background: rgba(255,255,255,0.08);
+  .nav-link:hover {
+    background: rgba(255,255,255,0.12);
     color: #fff;
   }
 
   .nav-link.active {
-    background: var(--accent);
+    background: rgba(255,255,255,0.14);
     color: #fff;
+    box-shadow: inset 4px 0 0 var(--gold);
   }
 
   .nav-link .icon { font-size: 16px; width: 20px; text-align: center; }

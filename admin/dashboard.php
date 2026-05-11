@@ -24,10 +24,10 @@ $recentOrders = $pdo->query("
 // Users by role
 $userRoles = $pdo->query("SELECT role, COUNT(*) as cnt FROM Users GROUP BY role")->fetchAll();
 
-$pageTitle = 'Admin Dashboard';
+$pageTitle = 'Нүүр хуудас';
 $navLinks = '
 <span class="nav-label">Үндсэн</span>
-<a href="dashboard.php" class="nav-link active"><span class="icon"></span> Dashboard</a>
+<a href="dashboard.php" class="nav-link active"><span class="icon"></span>Нүүр хуудас</a>
 <a href="users.php" class="nav-link"><span class="icon"></span> Хэрэглэгчид</a>
 <span class="nav-label">Удирдлага</span>
 <a href="orders.php" class="nav-link"><span class="icon"></span> Захиалгууд</a>
@@ -38,8 +38,7 @@ require_once '../includes/header.php';
 ?>
 
 <div class="page-header">
-  <h1>Dashboard</h1>
-  <p>Системийн ерөнхий мэдээлэл — <?= date('Y оны m сарын d') ?></p>
+  <h1>Нүүр хуудас</h1>
 </div>
 
 <div class="stats-grid">

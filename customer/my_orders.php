@@ -49,13 +49,13 @@ $navLinks = '
 <a href="dashboard.php" class="nav-link"><span class="icon"></span> Нүүр хуудас</a>
 <a href="menu.php" class="nav-link"><span class="icon"></span> Цэс & Захиалах</a>
 <a href="my_orders.php" class="nav-link active"><span class="icon"></span> Миний захиалга</a>
+<a href="profile.php" class="nav-link"><span class="icon"></span> Мэдээлэл засах</a>
 ';
 require_once '../includes/header.php';
 ?>
 
 <div class="page-header">
   <h1>Миний захиалга</h1>
-  <p>Өнгөрсөн болон одоогийн захиалгын статусууд</p>
 </div>
 
 <div class="card">

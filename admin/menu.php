@@ -56,7 +56,6 @@ require_once '../includes/header.php';
 
 <div class="page-header">
   <h1>Цэс & Хоол</h1>
-  <p>Хоолны мэдээлэл болон цэсийг удирдах</p>
 </div>
 
 <?php if ($msg): ?>
@@ -84,7 +83,7 @@ require_once '../includes/header.php';
     <button onclick="document.getElementById('addFoodModal').style.display='flex'" class="btn btn-primary">+ Хоол нэмэх</button>
   </div>
   <table>
-    <thead><tr><th>ID</th><th>Нэр</th><th>Үнэ</th><th>Статус</th><th>Үйлдэл</th></tr></thead>
+    <thead><tr><th>ID</th><th>Нэр</th><th>Үнэ</th><th>Төлөв</th><th>Үйлдэл</th></tr></thead>
     <tbody>
       <?php foreach ($foods as $f): ?>
       <tr>
@@ -99,11 +98,11 @@ require_once '../includes/header.php';
           <?php endif; ?>
         </td>
         <td style="display:flex;gap:6px;flex-wrap:wrap">
-          <button onclick="editPrice(<?= $f['food_ID'] ?>, <?= $f['price'] ?>)" class="btn btn-sm btn-ghost">💲 Үнэ</button>
+          <button onclick="editPrice(<?= $f['food_ID'] ?>, <?= $f['price'] ?>)" class="btn btn-sm btn-ghost">Үнийн мэдээлэл засах</button>
           <form method="POST" style="display:inline">
             <input type="hidden" name="action" value="toggle_food">
             <input type="hidden" name="food_id" value="<?= $f['food_ID'] ?>">
-            <button type="submit" class="btn btn-sm btn-ghost">⇄ Статус</button>
+            <button type="submit" class="btn btn-sm btn-ghost">Төлөв өөрчлөх</button>
           </form>
         </td>
       </tr>

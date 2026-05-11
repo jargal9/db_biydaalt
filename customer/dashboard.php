@@ -36,6 +36,7 @@ $navLinks = '
 <a href="dashboard.php" class="nav-link active"><span class="icon"></span> Нүүр хуудас</a>
 <a href="menu.php" class="nav-link"><span class="icon"></span> Цэс & Захиалах</a>
 <a href="my_orders.php" class="nav-link"><span class="icon"></span> Миний захиалга</a>
+<a href="profile.php" class="nav-link"><span class="icon"></span> Мэдээлэл засах</a>
 ';
 require_once '../includes/header.php';
 ?>
@@ -61,7 +62,7 @@ require_once '../includes/header.php';
 <div style="display:grid;grid-template-columns:1fr 1fr;gap:24px">
   <div class="card" style="grid-column:1/-1">
     <div class="card-title" style="justify-content:space-between">
-      <span>Захиалгууд</span>
+      <span> Сүүлийн захиалгууд</span>
       <a href="menu.php" class="btn btn-accent">+ Захиалах</a>
     </div>
     <?php if (empty($recentOrders)): ?>
