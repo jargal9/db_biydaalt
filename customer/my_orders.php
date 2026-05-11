@@ -7,11 +7,16 @@ $userID = $_SESSION['user_ID'];
 $msg = '';
 
 if (isset($_GET['payment_success'])) {
-    $msg = ['type' => 'success', 'text' => "✓ Захиалга #" . htmlspecialchars($_GET['payment_success']) . " төлөгдлөө. Ажилтан үүнийг боловсруулна."];
+    $paidID = cleanInt($_GET['payment_success'] ?? null) ?? '';
+    $msg = ['type' => 'success', 'text' => "✓ Захиалга #" . e($paidID) . " төлөгдлөө. Ажилтан үүнийг боловсруулна."];
 }
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['cancel_order_id'])) {
-    $orderID = (int)$_POST['cancel_order_id'];
+    $orderID = cleanInt($_POST['cancel_order_id'] ?? null);
+    if (!$orderID) {
+        logSecurityEvent($pdo, 'invalid_order_cancel', $_SESSION['username'] ?? null, false, json_encode($_POST));
+        $msg = ['type' => 'error', 'text' => 'Захиалгын ID буруу байна.'];
+    } else {
     $statusStmt = $pdo->prepare("SELECT status FROM Orders WHERE order_ID = ? AND customer_ID = ?");
     $statusStmt->execute([$orderID, $userID]);
     $currentStatus = $statusStmt->fetchColumn();
@@ -19,9 +24,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['cancel_order_id'])) {
     if ($currentStatus && $currentStatus !== 'Completed' && $currentStatus !== 'Cancelled') {
         $pdo->prepare("UPDATE Orders SET status = 'Cancelled' WHERE order_ID = ?")->execute([$orderID]);
         $pdo->prepare("UPDATE Delivery SET status = 'Cancelled' WHERE order_ID = ?")->execute([$orderID]);
+        logSecurityEvent($pdo, 'order_cancel', $_SESSION['username'] ?? null, true, 'order_ID=' . $orderID);
         $msg = ['type' => 'success', 'text' => "✓ Захиалга #$orderID амжилттай цуцлагдлаа."];
     } else {
         $msg = ['type' => 'error', 'text' => 'Энэ захиалгыг цуцлах боломжгүй байна.'];
+    }
     }
 }
 
@@ -61,7 +68,7 @@ require_once '../includes/header.php';
 <div class="card">
   <div class="card-title">Захиалгын жагсаалт</div>
   <?php if ($msg): ?>
-    <div class="alert alert-<?= $msg['type'] ?>"><?= $msg['text'] ?></div>
+    <div class="alert alert-<?= e($msg['type']) ?>"><?= e($msg['text']) ?></div>
   <?php endif; ?>
   <?php if (empty($orders)): ?>
     <p style="color:var(--warm-gray);font-size:14px;padding:16px 0">Танд захиалга байхгүй байна. "Цэс" дээр дарж хоол захиалаарай.</p>

@@ -1,5 +1,5 @@
 <?php
-session_start();
+require_once __DIR__ . '/security.php';
 
 function isLoggedIn() {
     return isset($_SESSION['user_ID']);
@@ -14,7 +14,7 @@ function requireLogin() {
 
 function requireRole($role) {
     requireLogin();
-    if ($_SESSION['role'] !== $role) {
+    if (!in_array($role, ROLES, true) || ($_SESSION['role'] ?? '') !== $role) {
         header('Location: ../index.php?error=access_denied');
         exit;
     }

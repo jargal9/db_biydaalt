@@ -8,31 +8,67 @@ $msg = '';
 
 // Add user
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
-    if ($_POST['action'] === 'add') {
-        $maxID = $pdo->query("SELECT MAX(user_ID) FROM Users")->fetchColumn();
-        $newID = ($maxID ?? 0) + 1;
-        $stmt = $pdo->prepare("INSERT INTO Users VALUES (?,?,?,?,?,?,?)");
-        $stmt->execute([
-            $newID,
-            $_POST['name'], $_POST['contact'], $_POST['address'],
-            $_POST['username'], $_POST['password'], $_POST['role']
-        ]);
-        $msg = ['type'=>'success', 'text'=>'✓ Хэрэглэгч нэмэгдлээ.'];
-    }
+    if (!validatePostedFields($pdo, $_POST, $_SESSION['username'] ?? null)) {
+        $msg = ['type'=>'error', 'text'=>'Оруулсан мэдээлэл зөвшөөрөгдөхгүй тэмдэгт агуулсан байна.'];
+    } elseif ($_POST['action'] === 'add') {
+        $name = cleanText($_POST['name'] ?? '', 100);
+        $contact = cleanText($_POST['contact'] ?? '', 50, true);
+        $address = cleanText($_POST['address'] ?? '', 255, true);
+        $username = cleanText($_POST['username'] ?? '', 50);
+        $password = trim($_POST['password'] ?? '');
+        $role = cleanEnum($_POST['role'] ?? '', ROLES);
 
-    if ($_POST['action'] === 'delete' && isset($_POST['del_id'])) {
-        $pdo->prepare("DELETE FROM Users WHERE user_ID = ?")->execute([$_POST['del_id']]);
-        $msg = ['type'=>'success', 'text'=>'✓ Хэрэглэгч устгагдлаа.'];
-    }
+        if (!$name || !$username || !$role || $password === '' || strlen($password) > 255) {
+            $msg = ['type'=>'error', 'text'=>'Хэрэглэгчийн мэдээллийг зөв бөглөнө үү.'];
+        } else {
+            $exists = $pdo->prepare("SELECT COUNT(*) FROM Users WHERE username = ?");
+            $exists->execute([$username]);
+            if ((int)$exists->fetchColumn() > 0) {
+                $msg = ['type'=>'error', 'text'=>'Энэ нэвтрэх нэр бүртгэлтэй байна.'];
+            } else {
+                $maxID = $pdo->query("SELECT MAX(user_ID) FROM Users")->fetchColumn();
+                $newID = ($maxID ?? 0) + 1;
+                $stmt = $pdo->prepare(
+                    "INSERT INTO Users (user_ID, name, contact, address, username, password, role)
+                     VALUES (?,?,?,?,?,?,?)"
+                );
+                $stmt->execute([$newID, $name, $contact, $address, $username, hashUserPassword($password), $role]);
+                logSecurityEvent($pdo, 'user_add', $username, true, 'role=' . $role);
+                $msg = ['type'=>'success', 'text'=>'✓ Хэрэглэгч нэмэгдлээ.'];
+            }
+        }
+    } elseif ($_POST['action'] === 'delete' && isset($_POST['del_id'])) {
+        $delID = cleanInt($_POST['del_id'] ?? null);
+        if (!$delID || $delID === (int)$currentUserId) {
+            $msg = ['type'=>'error', 'text'=>'Энэ хэрэглэгчийг устгах боломжгүй.'];
+        } else {
+            $pdo->prepare("DELETE FROM Users WHERE user_ID = ?")->execute([$delID]);
+            logSecurityEvent($pdo, 'user_delete', $_SESSION['username'] ?? null, true, 'deleted user_ID=' . $delID);
+            $msg = ['type'=>'success', 'text'=>'✓ Хэрэглэгч устгагдлаа.'];
+        }
+    } elseif ($_POST['action'] === 'edit') {
+        $userID = cleanInt($_POST['user_id'] ?? null);
+        $name = cleanText($_POST['name'] ?? '', 100);
+        $contact = cleanText($_POST['contact'] ?? '', 50, true);
+        $address = cleanText($_POST['address'] ?? '', 255, true);
+        $newRole = cleanEnum($_POST['role'] ?? '', ROLES);
 
-    if ($_POST['action'] === 'edit') {
-        $roleStmt = $pdo->prepare("SELECT role FROM Users WHERE user_ID = ?");
-        $roleStmt->execute([$_POST['user_id']]);
-        $role = $roleStmt->fetchColumn();
+        if (!$userID || !$name || !$newRole) {
+            $msg = ['type'=>'error', 'text'=>'Хэрэглэгчийн мэдээллийг зөв бөглөнө үү.'];
+        } else {
+            $roleStmt = $pdo->prepare("SELECT role FROM Users WHERE user_ID = ?");
+            $roleStmt->execute([$userID]);
+            $currentRole = $roleStmt->fetchColumn();
 
-        $stmt = $pdo->prepare("UPDATE Users SET name=?,contact=?,address=?,role=? WHERE user_ID=?");
-        $stmt->execute([$_POST['name'],$_POST['contact'],$_POST['address'],$role,$_POST['user_id']]);
-        $msg = ['type'=>'success', 'text'=>'✓ Мэдээлэл шинэчлэгдлээ.'];
+            if (!$currentRole || ((int)$userID === (int)$currentUserId && $newRole !== 'Admin')) {
+                $msg = ['type'=>'error', 'text'=>'Өөрийн admin эрхийг өөрчлөх боломжгүй.'];
+            } else {
+                $stmt = $pdo->prepare("UPDATE Users SET name=?, contact=?, address=?, role=? WHERE user_ID=?");
+                $stmt->execute([$name, $contact, $address, $newRole, $userID]);
+                logSecurityEvent($pdo, 'user_role_update', $_SESSION['username'] ?? null, true, "user_ID=$userID role=$newRole");
+                $msg = ['type'=>'success', 'text'=>'✓ Мэдээлэл шинэчлэгдлээ.'];
+            }
+        }
     }
 }
 
@@ -71,9 +107,9 @@ require_once '../includes/header.php';
       <tr>
         <td><?= $u['user_ID'] ?></td>
         <td><?= htmlspecialchars($u['name']) ?></td>
-        <td><code style="font-size:12px;background:#f0ebe0;padding:2px 6px;border-radius:4px"><?= $u['username'] ?></code></td>
-        <td><?= $u['contact'] ?></td>
-        <td><span class="badge badge-<?= strtolower($u['role']) ?>"><?= $u['role'] ?></span></td>
+        <td><code style="font-size:12px;background:#f0ebe0;padding:2px 6px;border-radius:4px"><?= e($u['username']) ?></code></td>
+        <td><?= e($u['contact']) ?></td>
+        <td><span class="badge badge-<?= strtolower(e($u['role'])) ?>"><?= e($u['role']) ?></span></td>
         <td style="display:flex;gap:6px">
           <button onclick="editUser(<?= htmlspecialchars(json_encode($u)) ?>)" class="btn btn-sm btn-ghost">Засах</button>
           <form method="POST" onsubmit="return confirm('Устгах уу?')" style="display:inline">
@@ -133,7 +169,11 @@ require_once '../includes/header.php';
       <div class="form-group"><label>Хаяг</label><input name="address" id="edit_address"></div>
       <div class="form-group">
         <label>Роль</label>
-        <input type="text" id="edit_role" disabled style="width:100%;padding:11px 14px;border:1.5px solid var(--border);border-radius:9px;font-family:'DM Sans',sans-serif;font-size:14px;color:var(--ink);background:#f0f0f0;" />
+        <select name="role" id="edit_role">
+          <option>Admin</option>
+          <option>Staff</option>
+          <option>Customer</option>
+        </select>
       </div>
       <div style="display:flex;gap:10px;margin-top:8px">
         <button type="submit" class="btn btn-primary">Хадгалах</button>

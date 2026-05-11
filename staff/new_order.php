@@ -7,18 +7,21 @@ $staffID = $_SESSION['user_ID'];
 $msg = '';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $customerID = $_POST['customer_id'] ?? null;
-    $customerName = $_POST['customer_name'] ?? '';
-    $customerContact = $_POST['customer_contact'] ?? '';
+    $customerID = cleanInt($_POST['customer_id'] ?? null);
+    $customerName = cleanText($_POST['customer_name'] ?? '', 100, true);
+    $customerContact = cleanText($_POST['customer_contact'] ?? '', 50, true);
     $items = $_POST['items'] ?? [];
     $quantities = $_POST['quantities'] ?? [];
 
+    if (!validatePostedFields($pdo, $_POST, $_SESSION['username'] ?? null)) {
+        $msg = ['type'=>'error','text'=>'Оруулсан мэдээлэл зөвшөөрөгдөхгүй тэмдэгт агуулсан байна.'];
+    } else {
     // If no existing customer selected, create new one
     if (!$customerID && $customerName) {
         $maxID = $pdo->query("SELECT MAX(user_ID) FROM Users")->fetchColumn();
         $customerID = ($maxID ?? 0) + 1;
         $pdo->prepare("INSERT INTO Users VALUES (?,?,?,?,?,?,?)")
-            ->execute([$customerID, $customerName, $customerContact, '', 'temp_' . time(), 'temp', 'Customer']);
+            ->execute([$customerID, $customerName, $customerContact, '', 'temp_' . time(), hashUserPassword(bin2hex(random_bytes(8))), 'Customer']);
     }
 
     if (!empty($items) && $customerID) {
@@ -32,8 +35,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $total = 0;
         $detailID = 1;
         foreach ($items as $i => $foodID) {
-            if (!$foodID || !isset($quantities[$i]) || $quantities[$i] < 1) continue;
-            $qty = (int)$quantities[$i];
+            $foodID = cleanInt($foodID ?? null);
+            $qty = cleanInt($quantities[$i] ?? null, 1, 50);
+            if (!$foodID || !$qty) continue;
             $priceRow = $pdo->prepare("SELECT price FROM Food_Info WHERE food_ID=?");
             $priceRow->execute([$foodID]);
             $price = $priceRow->fetchColumn();
@@ -44,7 +48,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         // Payment
         $maxPay = $pdo->query("SELECT MAX(pay_ID) FROM Payment")->fetchColumn();
-        $pdo->prepare("INSERT INTO Payment VALUES (?,?,?,?)")
+        $pdo->prepare("INSERT INTO Payment (pay_ID, order_ID, amount, pay_date) VALUES (?,?,?,?)")
             ->execute([($maxPay ?? 900)+1, $orderID, $total, date('Y-m-d H:i:s')]);
 
         // Delivery
@@ -52,9 +56,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $pdo->prepare("INSERT INTO Delivery VALUES (?,?,NULL,?)")
             ->execute([($maxDel ?? 700)+1, $orderID, 'Pending']);
 
+        logSecurityEvent($pdo, 'staff_order_create', $_SESSION['username'] ?? null, true, 'order_ID=' . $orderID);
         $msg = ['type'=>'success','text'=>"✓ Захиалга #$orderID амжилттай үүслээ! Нийт дүн: " . number_format($total) . "₮"];
     } else {
         $msg = ['type'=>'error','text'=>'Харилцагч сонгох эсвэл шинэ харилцагч нэмэх, мөн дор хаяж нэг хоол сонгоно уу.'];
+    }
     }
 }
 
@@ -173,7 +179,7 @@ function toggleCustomerMode() {
 
 const foodPrices = {
   <?php foreach ($foods as $f): ?>
-  "<?= $f['food_ID'] ?>": { name: "<?= addslashes($f['name']) ?>", price: <?= $f['price'] ?> },
+  "<?= (int)$f['food_ID'] ?>": { name: <?= json_encode($f['name']) ?>, price: <?= (int)$f['price'] ?> },
   <?php endforeach; ?>
 };
 

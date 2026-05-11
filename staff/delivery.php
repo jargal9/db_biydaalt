@@ -7,11 +7,23 @@ $staffID = $_SESSION['user_ID'];
 $msg = '';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['delivery_id'], $_POST['status'])) {
-    $newStatus = $_POST['status'];
-    $delivDate = $newStatus === 'Delivered' ? date('Y-m-d H:i:s') : null;
-    $pdo->prepare("UPDATE Delivery SET status=?, delivery_date=? WHERE delivery_ID=?")
-        ->execute([$newStatus, $delivDate, $_POST['delivery_id']]);
-    $msg = ['type'=>'success','text'=>'✓ Хүргэлтийн статус шинэчлэгдлээ.'];
+    $deliveryID = cleanInt($_POST['delivery_id'] ?? null);
+    $newStatus = cleanEnum($_POST['status'] ?? '', DELIVERY_STATUSES);
+
+    if (!$deliveryID || !$newStatus) {
+        logSecurityEvent($pdo, 'invalid_delivery_update', $_SESSION['username'] ?? null, false, json_encode($_POST));
+        $msg = ['type'=>'error','text'=>'Хүргэлтийн төлөв буруу байна.'];
+    } else {
+        $delivDate = $newStatus === 'Delivered' ? date('Y-m-d H:i:s') : null;
+        $pdo->prepare(
+            "UPDATE Delivery d
+             JOIN Orders o ON d.order_ID = o.order_ID
+             SET d.status=?, d.delivery_date=?
+             WHERE d.delivery_ID=? AND o.staff_ID=?"
+        )->execute([$newStatus, $delivDate, $deliveryID, $staffID]);
+        logSecurityEvent($pdo, 'delivery_status_update', $_SESSION['username'] ?? null, true, "delivery_ID=$deliveryID status=$newStatus");
+        $msg = ['type'=>'success','text'=>'✓ Хүргэлтийн статус шинэчлэгдлээ.'];
+    }
 }
 
 $deliveries = $pdo->prepare("
@@ -56,12 +68,12 @@ require_once '../includes/header.php';
         <td>#<?= $d['order_ID'] ?></td>
         <td><?= htmlspecialchars($d['customer_name']) ?></td>
         <td style="font-size:12px;color:var(--warm-gray)"><?= htmlspecialchars($d['address']) ?></td>
-        <td><?= $d['contact'] ?></td>
+        <td><?= e($d['contact']) ?></td>
         <td>
           <?php
           $sc = strtolower(str_replace(' ','',$d['status']));
           $cls = $sc === 'delivered' ? 'completed' : ($sc === 'cancelled' ? 'cancelled' : ($sc === 'inprogress' ? 'processing' : 'pending'));
-          echo "<span class='badge badge-$cls'>{$d['status']}</span>";
+          echo "<span class='badge badge-$cls'>" . e($d['status']) . "</span>";
           ?>
         </td>
         <td style="font-size:12px;color:var(--warm-gray)"><?= $d['delivery_date'] ?? '—' ?></td>

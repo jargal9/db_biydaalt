@@ -8,26 +8,48 @@ $msg = '';
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $action = $_POST['action'] ?? '';
 
-    if ($action === 'add_food') {
+    if (!validatePostedFields($pdo, $_POST, $_SESSION['username'] ?? null)) {
+        $msg = ['type'=>'error','text'=>'Оруулсан мэдээлэл зөвшөөрөгдөхгүй тэмдэгт агуулсан байна.'];
+    } elseif ($action === 'add_food') {
+        $name = cleanText($_POST['name'] ?? '', 100);
+        $price = cleanInt($_POST['price'] ?? null, 0, 100000000);
+        if (!$name || $price === null) {
+            $msg = ['type'=>'error','text'=>'Хоолны нэр болон үнийг зөв оруулна уу.'];
+        } else {
         $maxID = $pdo->query("SELECT MAX(food_ID) FROM Food_Info")->fetchColumn();
         $newID = ($maxID ?? 100) + 1;
         $pdo->prepare("INSERT INTO Food_Info VALUES (?,?,?,?)")
-            ->execute([$newID, $_POST['name'], 'Available', $_POST['price']]);
+            ->execute([$newID, $name, 'Available', $price]);
+        logSecurityEvent($pdo, 'food_add', $_SESSION['username'] ?? null, true, 'food_ID=' . $newID);
         $msg = ['type'=>'success','text'=>'✓ Хоол нэмэгдлээ.'];
+        }
     }
 
     if ($action === 'toggle_food') {
+        $foodID = cleanInt($_POST['food_id'] ?? null);
+        if (!$foodID) {
+            $msg = ['type'=>'error','text'=>'Хоолны ID буруу байна.'];
+        } else {
         $food = $pdo->prepare("SELECT status FROM Food_Info WHERE food_ID=?");
-        $food->execute([$_POST['food_id']]);
+        $food->execute([$foodID]);
         $cur = $food->fetchColumn();
         $new = $cur === 'Available' ? 'Unavailable' : 'Available';
-        $pdo->prepare("UPDATE Food_Info SET status=? WHERE food_ID=?")->execute([$new, $_POST['food_id']]);
+        $pdo->prepare("UPDATE Food_Info SET status=? WHERE food_ID=?")->execute([$new, $foodID]);
+        logSecurityEvent($pdo, 'food_status_toggle', $_SESSION['username'] ?? null, true, "food_ID=$foodID status=$new");
         $msg = ['type'=>'success','text'=>'✓ Өөрчлөгдлөө.'];
+        }
     }
 
     if ($action === 'update_price') {
-        $pdo->prepare("UPDATE Food_Info SET price=? WHERE food_ID=?")->execute([$_POST['price'], $_POST['food_id']]);
+        $foodID = cleanInt($_POST['food_id'] ?? null);
+        $price = cleanInt($_POST['price'] ?? null, 0, 100000000);
+        if (!$foodID || $price === null) {
+            $msg = ['type'=>'error','text'=>'Үнэ эсвэл хоолны ID буруу байна.'];
+        } else {
+        $pdo->prepare("UPDATE Food_Info SET price=? WHERE food_ID=?")->execute([$price, $foodID]);
+        logSecurityEvent($pdo, 'food_price_update', $_SESSION['username'] ?? null, true, "food_ID=$foodID");
         $msg = ['type'=>'success','text'=>'✓ Үнэ шинэчлэгдлээ.'];
+        }
     }
 }
 
@@ -69,7 +91,7 @@ require_once '../includes/header.php';
     <?php foreach ($menus as $m): ?>
     <div style="padding:20px;background:#f7f2ea;border-radius:12px;border:1px solid #e8e0d0">
       <div style="font-weight:600;font-size:16px;margin-bottom:4px"><?= htmlspecialchars($m['menu_name']) ?></div>
-      <div style="font-size:12px;color:var(--warm-gray);margin-bottom:12px">🕐 <?= $m['details'] ?></div>
+      <div style="font-size:12px;color:var(--warm-gray);margin-bottom:12px">🕐 <?= e($m['details']) ?></div>
       <div style="font-size:13px;color:#555"><?= htmlspecialchars($m['items'] ?? '-') ?></div>
     </div>
     <?php endforeach; ?>
@@ -150,4 +172,4 @@ function editPrice(id, price) {
   document.getElementById('priceModal').style.display = 'flex';
 }
 </script>
-`
+<?php require_once '../includes/footer.php'; ?>

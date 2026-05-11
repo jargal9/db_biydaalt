@@ -7,21 +7,24 @@ $userID = $_SESSION['user_ID'];
 $msg = '';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $name = trim($_POST['name'] ?? '');
-    $contact = trim($_POST['contact'] ?? '');
-    $address = trim($_POST['address'] ?? '');
+    $name = cleanText($_POST['name'] ?? '', 100);
+    $contact = cleanText($_POST['contact'] ?? '', 50, true);
+    $address = cleanText($_POST['address'] ?? '', 255, true);
     $password = trim($_POST['password'] ?? '');
 
-    if ($name) {
+    if (!validatePostedFields($pdo, $_POST, $_SESSION['username'] ?? null)) {
+        $msg = ['type' => 'error', 'text' => 'Оруулсан мэдээлэл зөвшөөрөгдөхгүй тэмдэгт агуулсан байна.'];
+    } elseif ($name && strlen($password) <= 255) {
         if ($password !== '') {
             $stmt = $pdo->prepare("UPDATE Users SET name=?, contact=?, address=?, password=? WHERE user_ID=?");
-            $stmt->execute([$name, $contact, $address, $password, $userID]);
+            $stmt->execute([$name, $contact, $address, hashUserPassword($password), $userID]);
         } else {
             $stmt = $pdo->prepare("UPDATE Users SET name=?, contact=?, address=? WHERE user_ID=?");
             $stmt->execute([$name, $contact, $address, $userID]);
         }
 
         $_SESSION['name'] = $name;
+        logSecurityEvent($pdo, 'profile_update', $_SESSION['username'] ?? null, true, 'customer profile updated');
         $msg = ['type' => 'success', 'text' => 'Таны мэдээлэл амжилттай шинэчлэгдлээ.'];
     } else {
         $msg = ['type' => 'error', 'text' => 'Нэрийг бөглөнө үү.'];

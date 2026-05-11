@@ -11,10 +11,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $quantities = $_POST['quantities'] ?? [];
     $filtered = [];
     foreach ($items as $i => $fid) {
-        if ($fid && isset($quantities[$i]) && $quantities[$i] >= 1) $filtered[] = ['food'=>$fid,'qty'=>(int)$quantities[$i]];
+        $foodID = cleanInt($fid ?? null);
+        $qty = cleanInt($quantities[$i] ?? null, 1, 50);
+        if ($foodID && $qty) $filtered[] = ['food'=>$foodID,'qty'=>$qty];
     }
 
-    if (!empty($filtered)) {
+    if (!validatePostedFields($pdo, $_POST, $_SESSION['username'] ?? null)) {
+        $msg = ['type'=>'error','text'=>'Оруулсан мэдээлэл зөвшөөрөгдөхгүй тэмдэгт агуулсан байна.'];
+    } elseif (!empty($filtered)) {
         // Pick any available staff
         $staff = $pdo->query("SELECT user_ID FROM Users WHERE role='Staff' LIMIT 1")->fetchColumn();
 
@@ -37,6 +41,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $pdo->prepare("INSERT INTO Delivery VALUES (?,?,NULL,?)")
             ->execute([($maxDel??700)+1, $orderID, 'Pending']);
 
+        logSecurityEvent($pdo, 'order_create', $_SESSION['username'] ?? null, true, 'order_ID=' . $orderID);
         $msg = ['type'=>'success','text'=>"✓ Захиалга #$orderID бүртгэгдлээ. Төлбөр хийхийн тулд 'Миний захиалга' хэсэг рүү очно уу."];
     } else {
         $msg = ['type'=>'error','text'=>'Дор хаяж нэг хоол сонгоно уу.'];
@@ -88,7 +93,7 @@ require_once '../includes/header.php';
       <div class="card-title" style="font-size:17px"><?= htmlspecialchars($menu['name']) ?></div>
       <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:14px">
         <?php foreach ($menu['items'] as $f): ?>
-        <div class="food-card" onclick="addToCart(<?= $f['food_ID'] ?>, '<?= addslashes($f['name']) ?>', <?= $f['price'] ?>)"
+        <div class="food-card" onclick="addToCart(<?= (int)$f['food_ID'] ?>, <?= htmlspecialchars(json_encode($f['name']), ENT_QUOTES, 'UTF-8') ?>, <?= (int)$f['price'] ?>)"
              style="padding:18px;background:#f7f2ea;border:2px solid transparent;border-radius:12px;cursor:pointer;transition:all 0.15s;user-select:none"
              onmouseover="this.style.borderColor='var(--gold)'" onmouseout="this.style.borderColor='transparent'">
           <div style="font-weight:600;margin-bottom:4px"><?= htmlspecialchars($f['name']) ?></div>

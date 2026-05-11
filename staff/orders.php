@@ -7,8 +7,17 @@ $staffID = $_SESSION['user_ID'];
 $msg = '';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['order_id'], $_POST['status'])) {
-    $pdo->prepare("UPDATE Orders SET status=? WHERE order_ID=? AND staff_ID=?")->execute([$_POST['status'], $_POST['order_id'], $staffID]);
-    $msg = ['type'=>'success','text'=>'✓ Захиалгын төлөв шинэчлэгдлээ.'];
+    $orderID = cleanInt($_POST['order_id'] ?? null);
+    $status = cleanEnum($_POST['status'] ?? '', ORDER_STATUSES);
+
+    if (!$orderID || !$status) {
+        logSecurityEvent($pdo, 'invalid_order_update', $_SESSION['username'] ?? null, false, json_encode($_POST));
+        $msg = ['type'=>'error','text'=>'Захиалгын төлөв буруу байна.'];
+    } else {
+        $pdo->prepare("UPDATE Orders SET status=? WHERE order_ID=? AND staff_ID=?")->execute([$status, $orderID, $staffID]);
+        logSecurityEvent($pdo, 'order_status_update', $_SESSION['username'] ?? null, true, "order_ID=$orderID status=$status");
+        $msg = ['type'=>'success','text'=>'✓ Захиалгын төлөв шинэчлэгдлээ.'];
+    }
 }
 
 $orders = $pdo->prepare("

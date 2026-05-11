@@ -5,25 +5,35 @@ require_once 'includes/db.php';
 $error = '';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $username = trim($_POST['username'] ?? '');
+    $username = cleanText($_POST['username'] ?? '', 50);
     $password = trim($_POST['password'] ?? '');
 
-    if ($username && $password) {
-        $stmt = $pdo->prepare("SELECT * FROM Users WHERE username = ? AND password = ?");
-        $stmt->execute([$username, $password]);
+    if (!validatePostedFields($pdo, $_POST, $username)) {
+        $error = 'Оруулсан мэдээлэл зөвшөөрөгдөхгүй тэмдэгт агуулсан байна.';
+    } elseif ($username && $password !== '' && strlen($password) <= 255) {
+        $stmt = $pdo->prepare("SELECT * FROM Users WHERE username = ?");
+        $stmt->execute([$username]);
         $user = $stmt->fetch();
 
-        if ($user) {
+        if ($user && verifyUserPassword($password, $user['password'])) {
+            if (passwordNeedsHash($user['password'])) {
+                $pdo->prepare("UPDATE Users SET password = ? WHERE user_ID = ?")
+                    ->execute([hashUserPassword($password), $user['user_ID']]);
+            }
+
+            session_regenerate_id(true);
             $_SESSION['user_ID'] = $user['user_ID'];
             $_SESSION['name']    = $user['name'];
             $_SESSION['role']    = $user['role'];
             $_SESSION['username']= $user['username'];
+            logSecurityEvent($pdo, 'login', $username, true, 'successful login');
 
             if ($user['role'] === 'Admin')    header('Location: admin/dashboard.php');
             elseif ($user['role'] === 'Staff') header('Location: staff/dashboard.php');
             else                               header('Location: customer/dashboard.php');
             exit;
         } else {
+            logSecurityEvent($pdo, 'login', $username, false, 'invalid credentials');
             $error = 'Нэвтрэх нэр эсвэл нууц үг буруу байна.';
         }
     } else {

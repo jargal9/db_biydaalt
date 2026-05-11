@@ -4,7 +4,7 @@ requireRole('Customer');
 require_once '../includes/db.php';
 
 $userID = $_SESSION['user_ID'];
-$orderID = (int)($_GET['order_id'] ?? 0);
+$orderID = cleanInt($_GET['order_id'] ?? 0) ?? 0;
 $msg = '';
 
 // Get order details
@@ -30,10 +30,12 @@ if (!$order || $order['status'] === 'Cancelled') {
 
 // Handle payment submission
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['pay_method'], $_POST['delivery_addr'])) {
-    $payMethod = trim($_POST['pay_method']);
-    $deliveryAddr = trim($_POST['delivery_addr']);
+    $payMethod = cleanEnum($_POST['pay_method'] ?? '', PAYMENT_METHODS);
+    $deliveryAddr = cleanText($_POST['delivery_addr'] ?? '', 255);
 
-    if (!$payMethod || !$deliveryAddr) {
+    if (!validatePostedFields($pdo, $_POST, $_SESSION['username'] ?? null)) {
+        $msg = ['type' => 'error', 'text' => 'Оруулсан мэдээлэл зөвшөөрөгдөхгүй тэмдэгт агуулсан байна.'];
+    } elseif (!$payMethod || !$deliveryAddr) {
         $msg = ['type' => 'error', 'text' => 'Төлбөрийн арга болон хүргэлтийн хаягийг бөглөнө үү.'];
     } else {
         try {
@@ -55,11 +57,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['pay_method'], $_POST[
 
             $pdo->prepare("UPDATE Orders SET status = 'Processing' WHERE order_ID = ?")
                 ->execute([$orderID]);
+            logSecurityEvent($pdo, 'payment_submit', $_SESSION['username'] ?? null, true, 'order_ID=' . $orderID);
 
             header('Location: my_orders.php?payment_success=' . $orderID);
             exit;
         } catch (Exception $e) {
-            $msg = ['type' => 'error', 'text' => 'Төлбөр төлөхдөө алдаа гарлаа: ' . $e->getMessage()];
+            error_log('Payment failed: ' . $e->getMessage());
+            $msg = ['type' => 'error', 'text' => 'Төлбөр төлөхдөө алдаа гарлаа.'];
         }
     }
 }
